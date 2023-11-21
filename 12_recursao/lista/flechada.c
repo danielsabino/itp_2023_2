@@ -1,47 +1,98 @@
 #include <stdio.h>
+#include <stdlib.h>
 
-typedef struct tesouro{
-    char nome[21];
-    int peso, valor;
-}Tesouro;
+typedef struct item{
+  char nome[20];
+  int valor;
+  int peso;
+} Item;
 
-int calcula_peso(Tesouro *m, int qtd){
-    int soma = 0;
-    for(int i = 0; i < qtd; i++){
-        soma += m->peso;
+void monta_inventario(Item* todos, Item* temp, Item* melhor, int total, int selecionados, int* tam_melhor, int limite, int peso_atual){
+  //Inventário cheio
+  if(peso_atual == limite){
+    int novo, atual;
+
+    novo = atual = 0;
+
+    for(int i=0; i<selecionados; i++)
+      novo += temp[i].valor;
+
+    for(int i=0; i<*tam_melhor; i++)
+      atual += melhor[i].valor;
+
+    if(novo > atual){
+      for(int i=0; i<selecionados; i++)
+        melhor[i] = temp[i];
+
+      *tam_melhor = selecionados;
     }
-    return soma;
-}
+  }
+  //Tenta botar mais alguma coisa
+  else{
+    for(int i=0; i<total; i++){
+      if(todos[i].peso > 0 && todos[i].peso + peso_atual <= limite ){
+        //Inclui o item
+        peso_atual += todos[i].peso;
+        temp[selecionados] = todos[i];
+        todos[i].peso = 0;
+        selecionados++;
 
-int coleta(Tesouro *t, int q, Tesouro *m, int qtd, int p, int *total){
-    int peso_atual = calcula_peso(m, qtd);
-    if(peso_atual > p){
-        return 0;
-    }    
-    for(int i = 0; i < q; i++){
-        
-        *total += coleta(t, q, )
+        monta_inventario(todos, temp, melhor, total, selecionados, tam_melhor, limite, peso_atual);
+
+        //Na volta, desfaz para testar novas combinações
+        selecionados--;
+        todos[i] = temp[selecionados];
+        peso_atual -= todos[i].peso;
+      }
     }
+    //Se não consegue botar mais ninguém, verifica se o estado atual é melhor do que o que existe na sacola até então
+    int novo, atual;
+
+    novo = atual = 0;
+
+    for(int i=0; i<selecionados; i++)
+      novo += temp[i].valor;
+
+    for(int i=0; i<*tam_melhor; i++)
+      atual += melhor[i].valor;
+
+    if(novo > atual){
+      for(int i=0; i<selecionados; i++)
+        melhor[i] = temp[i];
+
+      *tam_melhor = selecionados;
+    }
+  }
 }
 
 int main(){
-    // q: quantidade de itens na caverna
-    // p: peso máximo que o aventureiro consegue carregar
-    int q, p;
+  int qtd, selecionados = 0, maior = 0;
+  int limite;
 
-    // Leitura de Q e P
-    scanf("%d %d", &q, &p);
+  scanf("%d %d", &qtd, &limite);
 
-    // tesouros: tesouros presente na caverna
-    // mochila: mochila do aventureiro com itens que ele vai carregar
-    Tesouro tesouros[q];
-    Tesouro mochila[q];
+  Item carrinho[qtd];
+  Item melhor[qtd];
+  Item aux[qtd];
 
-    // Leitura dos tesouros
-    for(int i = 0; i < q; i++){
-        scanf(" %s", tesouros[i].nome);
-        scanf("%d", &tesouros[i].valor);
-        scanf("%d", &tesouros[i].peso);
+  for(int i=0; i<qtd; i++){
+    scanf(" %s %d %d", carrinho[i].nome, &carrinho[i].valor, &carrinho[i].peso);
+  }
+
+  monta_inventario(carrinho, aux, melhor, qtd, 0, &selecionados, limite, 0);
+
+  if(selecionados){
+    int valor = 0;
+    printf("Inventario final:\n");
+    for(int i=0; i<selecionados; i++){
+      printf("Item: %s\n", melhor[i].nome);
+      valor += melhor[i].valor;
     }
-    return 0;
+    printf("Valor total: %d\n", valor);
+  }
+  else{
+    printf("Nada para carregar...\n");
+  }
+
+  return 0;
 }
